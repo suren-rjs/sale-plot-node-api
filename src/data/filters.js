@@ -3,9 +3,10 @@ export class Filters {
     this.data = {};
   }
 
-  setFilters(listOfPrice, listOfYears) {
+  setFilters(listOfPrice, listOfYears, odoReadingList) {
     this.data.priceList = listOfPrice;
     this.data.yearList = listOfYears;
+    this.data.odoReadingList = odoReadingList;
   }
 
   getData() {

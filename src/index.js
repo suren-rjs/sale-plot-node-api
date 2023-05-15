@@ -119,27 +119,28 @@ app.get("/graph-data", async (req, res) => {
           graphDataList.push(doc.CUR_ODOM_READ)
         );
 
-        const min = Math.min.apply(null, graphDataList);
-        const max = Math.max.apply(null, graphDataList);
+        let min = Math.min.apply(null, graphDataList);
+        let max = Math.max.apply(null, graphDataList);
         let q1 = graphDataList.percentile(25);
-        const median = graphDataList.percentile(50);
+        let median = graphDataList.percentile(50);
         let q3 = graphDataList.percentile(75);
 
+        if (min == max) {
+          q1 = [0, max].percentile(25);
+          median = [0, max].percentile(50);
+          q3 = [0, max].percentile(75);
+        }
+
         const datasets = [
-          { label: "Price", min: min, max: max, median: median },
+          {
+            label: "Odo Reading",
+            min: min,
+            max: max,
+            median: median,
+            quartile1: q1,
+            quartile3: q3,
+          },
         ];
-        if (q1 === min && q3 === max) {
-          q1 = null;
-          q3 = null;
-        }
-
-        if (q1 !== null) {
-          datasets[0].quartile1 = q1;
-        }
-
-        if (q3 !== null) {
-          datasets[0].quartile3 = q3;
-        }
 
         graphData.push({
           label: name,
@@ -150,27 +151,29 @@ app.get("/graph-data", async (req, res) => {
           graphDataList.push(doc.MAX_SALE_VALUE)
         );
 
-        const min = Math.min.apply(null, graphDataList);
-        const max = Math.max.apply(null, graphDataList);
+        let min = Math.min.apply(null, graphDataList);
+        let max = Math.max.apply(null, graphDataList);
         let q1 = graphDataList.percentile(25);
-        const median = graphDataList.percentile(50);
+        let median = graphDataList.percentile(50);
         let q3 = graphDataList.percentile(75);
 
+        if (min == max) {
+          min = 0;
+          q1 = max * 0.25;
+          median = max * 0.5;
+          q3 = max * 0.75;
+        }
+
         const datasets = [
-          { label: "Price", min: min, max: max, median: median },
+          {
+            label: "Price",
+            min: min,
+            max: max,
+            median: median,
+            quartile1: q1,
+            quartile3: q3,
+          },
         ];
-        if (q1 === min && q3 === max) {
-          q1 = null;
-          q3 = null;
-        }
-
-        if (q1 !== null) {
-          datasets[0].quartile1 = q1;
-        }
-
-        if (q3 !== null) {
-          datasets[0].quartile3 = q3;
-        }
 
         graphData.push({
           label: name,
@@ -189,13 +192,19 @@ app.get("/filters", async (req, res) => {
   try {
     let years = [];
     let priceList = [];
+    let odoReadingList = [];
 
     const documents = await db.getDocuments();
     documents.forEach((document) => {
       years.push(document.VEHICLEYEAR);
       priceList.push(document.MAX_SALE_VALUE);
+      odoReadingList.push(document.CUR_ODOM_READ);
     });
-    filters.setFilters([...new Set(years)], [...new Set(priceList)]);
+    filters.setFilters(
+      [...new Set(years)],
+      [...new Set(priceList)],
+      [...new Set(odoReadingList)]
+    );
 
     res.send(filters);
   } catch (e) {
